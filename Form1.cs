@@ -197,6 +197,182 @@ namespace SimpleChat
             button_StopService.Enabled = false;
         }
 
+        // ===== CLIENT =====
+        TcpClient client;
+        NetworkStream clientStream;
+        Thread clientThread;
+        bool clientRunning = false;
 
+        string myUsername = "";
+        StringBuilder clientBuffer = new StringBuilder();
+
+        // ================= CLIENT =================
+        private void ConnectServer(string ip, int port)
+        {
+            client = new TcpClient();
+            client.Connect(IPAddress.Parse(ip), port);
+
+            clientStream = client.GetStream();
+            clientRunning = true;
+
+            myUsername = TextNhapUsername.Text;
+            clientStream.Write(Encoding.UTF8.GetBytes(myUsername), 0, myUsername.Length);
+
+            clientThread = new Thread(ClientListen);
+            clientThread.IsBackground = true;
+            clientThread.Start();
+
+            button_Connect.Enabled = false;
+            button_Disconnect.Enabled = true;
+        }
+
+        private void ClientListen()
+        {
+            byte[] buffer = new byte[4096];
+
+            try
+            {
+                while (clientRunning)
+                {
+                    int bytesRead = clientStream.Read(buffer, 0, buffer.Length);
+                    if (bytesRead == 0) break;
+
+                    clientBuffer.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+
+                    while (clientBuffer.ToString().Contains("<END>"))
+                    {
+                        string full = clientBuffer.ToString();
+                        int idx = full.IndexOf("<END>");
+                        string msg = full.Substring(0, idx);
+                        clientBuffer.Remove(0, idx + 5);
+
+                        HandleMessage(msg);
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                this.Invoke(new Action(() =>
+                {
+                    button_Connect.Enabled = true;
+                    button_Disconnect.Enabled = false;
+                    listBox1.Items.Clear(); //  clear khi mất kết nối
+                }));
+            }
+        }
+
+        private void HandleMessage(string msg)
+        {
+            if (msg == "USERNAME_TAKEN")
+            {
+                this.Invoke(new Action(() =>
+                {
+                    MessageBox.Show("Username đã tồn tại!");
+                    button_Connect.Enabled = true;
+                    button_Disconnect.Enabled = false;
+                }));
+
+                clientRunning = false;
+                client?.Close();
+            }
+            else if (msg.StartsWith("USERLIST|"))
+            {
+                string[] users = msg.Replace("USERLIST|", "").Split(',');
+
+                listBox1.Invoke(new Action(() =>
+                {
+                    listBox1.Items.Clear();
+                    foreach (var u in users)
+                        listBox1.Items.Add(u);
+                }));
+            }
+            else if (msg.StartsWith("FILE|"))
+            {
+                string[] p = msg.Split('|');
+                byte[] fileData = Convert.FromBase64String(p[3]);
+
+                this.Invoke(new Action(() =>
+                {
+                    DialogResult r = MessageBox.Show($"{p[1]} gửi file: {p[2]}", "Nhận file", MessageBoxButtons.YesNo);
+
+                    if (r == DialogResult.Yes)
+                    {
+                        SaveFileDialog sfd = new SaveFileDialog();
+                        sfd.FileName = p[2];
+
+                        if (sfd.ShowDialog() == DialogResult.OK)
+                        {
+                            System.IO.File.WriteAllBytes(sfd.FileName, fileData);
+                        }
+                    }
+                }));
+            }
+            else
+            {
+                richTextBox1.Invoke(new Action(() =>
+                {
+                    richTextBox1.AppendText(msg + Environment.NewLine);
+                }));
+            }
+        }
+
+        private void button_Connect_Click(object sender, EventArgs e)
+        {
+            ConnectServer(IPServer.Text, (int)Port.Value);
+        }
+
+        private void button_Disconnect_Click(object sender, EventArgs e)
+        {
+            clientRunning = false;
+            try { client?.Close(); } catch { }
+
+            listBox1.Items.Clear(); // clear user list
+
+            button_Connect.Enabled = true;
+            button_Disconnect.Enabled = false;
+        }
+
+        private void btnSend_Click(object sender, EventArgs e)
+        {
+            string toUser = listBox1.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(toUser)) return;
+
+            string msg = $"TO|{toUser}|{textBox1.Text}<END>";
+            byte[] data = Encoding.UTF8.GetBytes(msg);
+            clientStream.Write(data, 0, data.Length);
+
+            textBox1.Clear();
+        }
+
+        private void btnSendFile_Click(object sender, EventArgs e)
+        {
+            string toUser = listBox1.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(toUser)) return;
+
+            OpenFileDialog ofd = new OpenFileDialog();
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                byte[] fileData = System.IO.File.ReadAllBytes(ofd.FileName);
+                string base64 = Convert.ToBase64String(fileData);
+                string fileName = System.IO.Path.GetFileName(ofd.FileName);
+
+                string msg = $"FILE|{toUser}|{fileName}|{base64}<END>";
+                byte[] data = Encoding.UTF8.GetBytes(msg);
+
+                clientStream.Write(data, 0, data.Length);
+            }
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            richTextBox1.Clear();
+        }
+
+        private void btnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
     }
 }
