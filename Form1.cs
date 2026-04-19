@@ -338,7 +338,12 @@ namespace SimpleChat
         {
             string toUser = listBox1.SelectedItem?.ToString();
             if (string.IsNullOrEmpty(toUser)) return;
-
+            //rang buoc khong gui tin  nhan cho chinh minh
+            if (toUser == myUsername)
+            {
+                MessageBox.Show("Không thể gửi tin nhắn cho chính mình!");
+                return;
+            }
             string msg = $"TO|{toUser}|{textBox1.Text}<END>";
             byte[] data = Encoding.UTF8.GetBytes(msg);
             clientStream.Write(data, 0, data.Length);

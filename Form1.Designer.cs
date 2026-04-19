@@ -95,6 +95,7 @@ namespace SimpleChat
             button7_Clear.TabIndex = 8;
             button7_Clear.Text = "Clear";
             button7_Clear.UseVisualStyleBackColor = false;
+            button7_Clear.Click += btnClear_Click;
             // 
             // button8_Exit
             // 
@@ -105,6 +106,7 @@ namespace SimpleChat
             button8_Exit.TabIndex = 9;
             button8_Exit.Text = "Exit";
             button8_Exit.UseVisualStyleBackColor = false;
+            button8_Exit.Click += btnExit_Click;
             // 
             // label5
             // 
@@ -132,6 +134,7 @@ namespace SimpleChat
             button_Send.TabIndex = 12;
             button_Send.Text = "Send";
             button_Send.UseVisualStyleBackColor = false;
+            button_Send.Click += btnSend_Click;
             // 
             // panel1
             // 
@@ -203,6 +206,7 @@ namespace SimpleChat
             button_Disconnect.TabIndex = 5;
             button_Disconnect.Text = "Disconnect";
             button_Disconnect.UseVisualStyleBackColor = false;
+            button_Disconnect.Click += button_Disconnect_Click;
             // 
             // button_Connect
             // 
@@ -213,6 +217,7 @@ namespace SimpleChat
             button_Connect.TabIndex = 4;
             button_Connect.Text = "Connect";
             button_Connect.UseVisualStyleBackColor = false;
+            button_Connect.Click += button_Connect_Click;
             // 
             // Port
             // 
@@ -339,6 +344,7 @@ namespace SimpleChat
             button_SendFile.TabIndex = 17;
             button_SendFile.Text = "Send File";
             button_SendFile.UseVisualStyleBackColor = false;
+            button_SendFile.Click += btnSendFile_Click;
             // 
             // Form1
             // 
