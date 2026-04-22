@@ -11,7 +11,7 @@ namespace SimpleChat
 {
     public partial class Form1 : Form
     {
-        // ===== SERVER =====
+        // ========= SERVER ==========
         TcpListener server;
         Thread serverThread;
         bool serverRunning = false;
@@ -22,8 +22,9 @@ namespace SimpleChat
             public string Username;
         }
 
-        List<ClientInfo> clients = new List<ClientInfo>();
-
+        List<ClientInfo> clients = new List<Clie    fo>();
+         
+        // ========== KHOI TAO FORM=========
 
         public Form1()
         {
@@ -39,7 +40,7 @@ namespace SimpleChat
             button_Disconnect.Enabled = false;
         }
 
-        // ================= SERVER =================
+        // ================= SERVER-START ================
 
         private void StartServer(int port)
         {
