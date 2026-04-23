@@ -54,6 +54,7 @@ namespace SimpleChat
             serverThread.Start();
         }
         // ================= SERVER-LISTEN ================
+
         private void ServerListen()
         {
             while (serverRunning)
@@ -143,38 +144,43 @@ namespace SimpleChat
 
                 if (sender != null && receiver != null)
                 {
-                    string send = $"[PRIVATE] {sender.Username}: {p[2]}<END>"; //p[2] *
-                    byte[] data = Encoding.UTF8.GetBytes(send);
-
-                    receiver.Client.GetStream().Write(data, 0, data.Length);
-                    sender.Client.GetStream().Write(data, 0, data.Length);
+                    string send = $"[PRIVATE] {sender.Username}: {p[2]}<END>"; // dinh dang tin nhan 
+                    byte[] data = Encoding.UTF8.GetBytes(send); // chuyen chuoi thanh mang  gui qua mang theo chuan UTF-8 de gui dl qa mang bang networkStream
+                    receiver.Client.GetStream().Write(data, 0, data.Length);// gui cho ng nhan
+                    sender.Client.GetStream().Write(data, 0, data.Length);// gui lai cho ng gui (hien thi)
                 }
             }
+            //kiem tra gui file 
             else if (msg.StartsWith("FILE|"))
             {
-                string[] p = msg.Split('|');
-                var sender = clients.Find(x => x.Client == tcpClient);
-                var receiver = clients.Find(x => x.Username == p[1]);
+                string[] p = msg.Split('|'); 
+                var sender = clients.Find(x => x.Client == tcpClient); // tim ng gui
+                var receiver = clients.Find(x => x.Username == p[1]); //p[1] tim ng nhan
 
-                if (sender != null && receiver != null)
+                if (sender != null && receiver != null) //kiem tra ng gui/nhan co ton tai k
                 {
-                    string send = $"FILE|{sender.Username}|{p[2]}|{p[3]}<END>";
+                    string send = $"FILE|{sender.Username}|{p[2]}|{p[3]}<END>"; 
+                    // gui file
+                    // p[2] ten file
+                    // p[3] nd file 
                     byte[] data = Encoding.UTF8.GetBytes(send);
                     receiver.Client.GetStream().Write(data, 0, data.Length);
+                    // gui file dang base 64
                 }
             }
         }
         // ================= SERVER-BROADCAST ================
         private void BroadcastUserList()
         {
+            // tao chuoi ds user
             string list = "USERLIST|" + string.Join(",", clients.Select(x => x.Username)) + "<END>";
-            byte[] data = Encoding.UTF8.GetBytes(list);
-
+            byte[] data = Encoding.UTF8.GetBytes(list); //chuyen str sang byte de gui qa networkStream
+            // gui cho tat ca client 
             foreach (var c in clients.ToList())
             {
                 try { c.Client.GetStream().Write(data, 0, data.Length); } catch { }
             }
-
+            //cap nhat UI Server
             listBox1.Invoke(new Action(() =>
             {
                 listBox1.Items.Clear();
@@ -183,14 +189,16 @@ namespace SimpleChat
             }));
         }
         // ================= SERVER-BUTTON START ================
-        private void button_StartService_Click(object sender, EventArgs e)
+        private void button_StartService_Click(object sender, EventArgs e) //ham skien
         {
+            // rang buoc khong nhan lai khi startservice
             StartServer((int)numericUpDown1.Value);
             button_StartService.Enabled = false;
             button_StopService.Enabled = true;
         }
-        // ================= SERVER-BUTTON STOP ================
+        // ================= SERVER-BUTTON STOP ===============
         private void button_StopService_Click(object sender, EventArgs e)
+            //bam stop ctrinh dung ngat all client ,xoa ds user va rset lai nut giao dien 
         {
             serverRunning = false;
             try { server?.Stop(); } catch { }
@@ -207,35 +215,37 @@ namespace SimpleChat
         }
 
         // ===== CLIENT-KHAI BAO =====
-        TcpClient client;
-        NetworkStream clientStream;
-        Thread clientThread;
-        bool clientRunning = false;
+        // cac bien ket noi, gui/nhan dlieu và xu li message 
+        TcpClient client; 
+        NetworkStream clientStream; 
+        Thread clientThread; // luong nhan dlieu
+        bool clientRunning = false; // trang thai client 
 
         string myUsername = "";
-        StringBuilder clientBuffer = new StringBuilder();
+        StringBuilder clientBuffer = new StringBuilder(); //StringBuilder ghep message tcp
 
         // ================= CLIENT-CONNECT =================
-
+        //ket noi client toi server, gui username va nhan dlieu
         private void ConnectServer(string ip, int port)
         {
-            client = new TcpClient();
+            client = new TcpClient(); 
             client.Connect(IPAddress.Parse(ip), port);
 
             clientStream = client.GetStream();
             clientRunning = true;
 
-            myUsername = TextNhapUsername.Text;
+            myUsername = TextNhapUsername.Text; // lay username tu textbox
             clientStream.Write(Encoding.UTF8.GetBytes(myUsername), 0, myUsername.Length);
-
+            //gui username len server 
             clientThread = new Thread(ClientListen);
             clientThread.IsBackground = true;
             clientThread.Start();
-
+            // rang buoc k nhan lai neu da bat
             button_Connect.Enabled = false;
             button_Disconnect.Enabled = true;
         }
         // ================= CLIENT-LISTEN =================
+        //nhan dlieu, ghep thanh message hoan chinh va gui di xu li 
         private void ClientListen()
         {
             byte[] buffer = new byte[4096];
@@ -244,10 +254,11 @@ namespace SimpleChat
             {
                 while (clientRunning)
                 {
+                    //doc dlieu =0 thì break 
                     int bytesRead = clientStream.Read(buffer, 0, buffer.Length);
                     if (bytesRead == 0) break;
-
-                    clientBuffer.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                    //ghep dlieu 
+                    clientBuffer.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead)); //ghep dlieu 
 
                     while (clientBuffer.ToString().Contains("<END>"))
                     {
@@ -256,14 +267,14 @@ namespace SimpleChat
                         string msg = full.Substring(0, idx);
                         clientBuffer.Remove(0, idx + 5);
 
-                        HandleMessage(msg);
+                        HandleMessage(msg);// xu li message 
                     }
                 }
             }
             catch { }
             finally
             {
-                this.Invoke(new Action(() =>
+                this.Invoke(new Action(() => //invoke cap nhap UI khi mat ket noi 
                 {
                     button_Connect.Enabled = true;
                     button_Disconnect.Enabled = false;
@@ -272,6 +283,7 @@ namespace SimpleChat
             }
         }
         // ================= CLIENT-HANDLE MESSAGE  =================
+        //xu li phan hien thi,nhan tu server, gui toi UI
         private void HandleMessage(string msg)
         {
             if (msg == "USERNAME_TAKEN")
@@ -286,7 +298,7 @@ namespace SimpleChat
                 clientRunning = false;
                 client?.Close();
             }
-            else if (msg.StartsWith("USERLIST|"))
+            else if (msg.StartsWith("USERLIST|")) 
             {
                 string[] users = msg.Replace("USERLIST|", "").Split(',');
 
@@ -298,17 +310,20 @@ namespace SimpleChat
                 }));
             }
             else if (msg.StartsWith("FILE|"))
+                //nhan file 
             {
                 string[] p = msg.Split('|');
+                //p[1] ng gui
+                //p[2] fileName 
+                //p[3] base64 
                 byte[] fileData = Convert.FromBase64String(p[3]);
-
+                //chuyen base64 -> dlieu file 
                 this.Invoke(new Action(() =>
                 {
                     DialogResult r = MessageBox.Show($"{p[1]} gửi file: {p[2]}", "Nhận file", MessageBoxButtons.YesNo);
-
                     if (r == DialogResult.Yes)
                     {
-                        SaveFileDialog sfd = new SaveFileDialog();
+                        SaveFileDialog sfd = new SaveFileDialog();// chon noi luu
                         sfd.FileName = p[2];
 
                         if (sfd.ShowDialog() == DialogResult.OK)
@@ -322,7 +337,7 @@ namespace SimpleChat
             {
                 richTextBox1.Invoke(new Action(() =>
                 {
-                    richTextBox1.AppendText(msg + Environment.NewLine);
+                    richTextBox1.AppendText(msg + Environment.NewLine);//hie thi tin nhan 
                 }));
             }
         }
@@ -359,7 +374,10 @@ namespace SimpleChat
 
             textBox1.Clear();
         }
-        // ========================== CLIENT - SENFILE ==========================
+        // ========================== CLIENT - SENDFILE ==========================
+        // skien chon file, chuyen file sang base 64,dong goi thanh message theo format FIle roi chuyen toi ng nhan 
+        // ReadAllBytes() → doc file 
+        //ToBase64String() → chuyen file thanh chuoi
         private void btnSendFile_Click(object sender, EventArgs e)
         {
             string toUser = listBox1.SelectedItem?.ToString();
