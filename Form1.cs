@@ -181,7 +181,7 @@ namespace SimpleChat
             button_StartService.Enabled = false;
             button_StopService.Enabled = true;
         }
-
+        // ================= SERVER-BUTTON STOP ================
         private void button_StopService_Click(object sender, EventArgs e)
         {
             serverRunning = false;
@@ -198,7 +198,7 @@ namespace SimpleChat
             button_StopService.Enabled = false;
         }
 
-        // ===== CLIENT =====
+        // ===== CLIENT-KHAI BAO =====
         TcpClient client;
         NetworkStream clientStream;
         Thread clientThread;
@@ -207,7 +207,7 @@ namespace SimpleChat
         string myUsername = "";
         StringBuilder clientBuffer = new StringBuilder();
 
-        // ================= CLIENT =================
+        // ================= CLIENT-CONNECT =================
 
         private void ConnectServer(string ip, int port)
         {
@@ -227,7 +227,7 @@ namespace SimpleChat
             button_Connect.Enabled = false;
             button_Disconnect.Enabled = true;
         }
-
+        // ================= CLIENT-LISTEN =================
         private void ClientListen()
         {
             byte[] buffer = new byte[4096];
@@ -263,7 +263,7 @@ namespace SimpleChat
                 }));
             }
         }
-
+        // ================= CLIENT-HANDLE MESSAGE  =================
         private void HandleMessage(string msg)
         {
             if (msg == "USERNAME_TAKEN")
@@ -318,12 +318,12 @@ namespace SimpleChat
                 }));
             }
         }
-
+        // ========================== CLIENT - BUTTON CONNECT ==========================
         private void button_Connect_Click(object sender, EventArgs e)
         {
             ConnectServer(IPServer.Text, (int)Port.Value);
         }
-
+        // ========================== CLIENT -BUTTON DISCONNECT ==========================
         private void button_Disconnect_Click(object sender, EventArgs e)
         {
             clientRunning = false;
@@ -334,7 +334,7 @@ namespace SimpleChat
             button_Connect.Enabled = true;
             button_Disconnect.Enabled = false;
         }
-
+        // ========================== CLIENT - BUTTON SEND  ==========================
         private void btnSend_Click(object sender, EventArgs e)
         {
             string toUser = listBox1.SelectedItem?.ToString();
@@ -351,7 +351,7 @@ namespace SimpleChat
 
             textBox1.Clear();
         }
-
+        // ========================== CLIENT - SENFILE ==========================
         private void btnSendFile_Click(object sender, EventArgs e)
         {
             string toUser = listBox1.SelectedItem?.ToString();
@@ -371,12 +371,12 @@ namespace SimpleChat
                 clientStream.Write(data, 0, data.Length);
             }
         }
-
+        // ========================== CLIENT - BUTTON CLEAR  ==========================
         private void btnClear_Click(object sender, EventArgs e)
         {
             richTextBox1.Clear();
         }
-
+        // ========================== CLIENT - BUTTON EXIT ==========================
         private void btnExit_Click(object sender, EventArgs e)
         {
             Application.Exit();
