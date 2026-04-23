@@ -11,8 +11,8 @@ namespace SimpleChat
 {
     public partial class Form1 : Form
     {
-        // ========= SERVER ==========
-        TcpListener server;
+        // ===== SERVER =====
+        TcpListener server; //
         Thread serverThread;
         bool serverRunning = false;
 
@@ -61,6 +61,7 @@ namespace SimpleChat
                 try
                 {
                     TcpClient newClient = server.AcceptTcpClient();
+                    //=============TAO LUONG CHO CLIENT CHAY ( 1 CLIENT=1 THREAD)===================
                     Thread t = new Thread(() => HandleClient(newClient));
                     t.IsBackground = true;
                     t.Start();
@@ -68,46 +69,52 @@ namespace SimpleChat
                 catch { }
             }
         }
-        // ================= SERVER-HANDLE CLIENT ================
+        // ================= SERVER-HANDLE CLIENT (client connect -> server doc ngay) ================
         private void HandleClient(TcpClient tcpClient)
         {
-            NetworkStream stream = tcpClient.GetStream();
-            byte[] buffer = new byte[4096];
-            StringBuilder sb = new StringBuilder();
+            NetworkStream stream = tcpClient.GetStream(); // getstream de doc/ghi du lieu
+            byte[] buffer = new byte[4096]; // buffer chua du lieu nhan duoc 
+            StringBuilder sb = new StringBuilder(); // ghep message lai
             string username = "";
 
             try
             {
+                // doc username dau tien client gui len 
                 int bytesRead = stream.Read(buffer, 0, buffer.Length);
                 username = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
                 //=================== CHECK TRÙNG USERNAME==================
                 if (clients.Any(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase)))
+                //Any kiem tra co phan tu nao thoa dk
+                // equals so sanh username cu voi username moi
+                //StringComparison.OrdinalIgnoreCase so sanh k phan biet hoa thuong 
                 {
+                    // trung thi bao loi ngat ket noi 
                     byte[] data = Encoding.UTF8.GetBytes("USERNAME_TAKEN<END>");
                     stream.Write(data, 0, data.Length);
                     tcpClient.Close();
                     return;
                 }
-
+                // add client vao danh sach 
                 clients.Add(new ClientInfo { Client = tcpClient, Username = username });
-                BroadcastUserList();
-
+                BroadcastUserList(); // gui danh sach user cho all client 
+                
+                // vong lap nhan message 
                 while (serverRunning)
                 {
                     bytesRead = stream.Read(buffer, 0, buffer.Length);
                     if (bytesRead == 0) break;
 
                     sb.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-
+                    // vong lap xu li message hoan chinh ket thuc bang END 
                     while (sb.ToString().Contains("<END>"))
                     {
                         string full = sb.ToString();
-                        int idx = full.IndexOf("<END>");
-                        string msg = full.Substring(0, idx);
-                        sb.Remove(0, idx + 5);
+                        int idx = full.IndexOf("<END>"); //Tim vi tri ket thuc message 
+                        string msg = full.Substring(0, idx); //cat ms hoan chinh
+                        sb.Remove(0, idx + 5); //xoa phan da xu li khoi buffer 
 
-                        ProcessServerMessage(msg, tcpClient);
+                        ProcessServerMessage(msg, tcpClient); 
                     }
                 }
             }
@@ -115,10 +122,11 @@ namespace SimpleChat
             finally
             {
                 var c = clients.Find(x => x.Client == tcpClient);
+                // tim client trong danh sach
                 if (c != null)
                 {
-                    clients.Remove(c);
-                    BroadcastUserList();
+                    clients.Remove(c); // xoa client khi disconnect 
+                    BroadcastUserList(); // cap nhat lai ds
                 }
 
                 tcpClient.Close();
@@ -127,15 +135,15 @@ namespace SimpleChat
         // ================= SERVER-XU LI MESSAGE ================
         private void ProcessServerMessage(string msg, TcpClient tcpClient)
         {
-            if (msg.StartsWith("TO|"))
+            if (msg.StartsWith("TO|")) //Neu la tin nhan rieng
             {
-                string[] p = msg.Split('|');
-                var sender = clients.Find(x => x.Client == tcpClient);
-                var receiver = clients.Find(x => x.Username == p[1]);
+                string[] p = msg.Split('|'); // tach chuoi thanh mang p[i]
+                var sender = clients.Find(x => x.Client == tcpClient); // tim ng gui
+                var receiver = clients.Find(x => x.Username == p[1]); // p[1] tim ng nhan theo username 
 
                 if (sender != null && receiver != null)
                 {
-                    string send = $"[PRIVATE] {sender.Username}: {p[2]}<END>";
+                    string send = $"[PRIVATE] {sender.Username}: {p[2]}<END>"; //p[2] *
                     byte[] data = Encoding.UTF8.GetBytes(send);
 
                     receiver.Client.GetStream().Write(data, 0, data.Length);
