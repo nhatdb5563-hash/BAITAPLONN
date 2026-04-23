@@ -22,8 +22,8 @@ namespace SimpleChat
             public string Username;
         }
 
-        List<ClientInfo> clients = new List<Clie    fo>();
-         
+        List<ClientInfo> clients = new List<ClientInfo>();
+
         // ========== KHOI TAO FORM=========
 
         public Form1()
@@ -53,7 +53,7 @@ namespace SimpleChat
             serverThread.IsBackground = true;
             serverThread.Start();
         }
-
+        // ================= SERVER-LISTEN ================
         private void ServerListen()
         {
             while (serverRunning)
@@ -68,7 +68,7 @@ namespace SimpleChat
                 catch { }
             }
         }
-
+        // ================= SERVER-HANDLE CLIENT ================
         private void HandleClient(TcpClient tcpClient)
         {
             NetworkStream stream = tcpClient.GetStream();
@@ -81,7 +81,7 @@ namespace SimpleChat
                 int bytesRead = stream.Read(buffer, 0, buffer.Length);
                 username = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 
-                // CHECK TRÙNG USERNAME
+                //=================== CHECK TRÙNG USERNAME==================
                 if (clients.Any(x => x.Username.Equals(username, StringComparison.OrdinalIgnoreCase)))
                 {
                     byte[] data = Encoding.UTF8.GetBytes("USERNAME_TAKEN<END>");
@@ -124,7 +124,7 @@ namespace SimpleChat
                 tcpClient.Close();
             }
         }
-
+        // ================= SERVER-XU LI MESSAGE ================
         private void ProcessServerMessage(string msg, TcpClient tcpClient)
         {
             if (msg.StartsWith("TO|"))
@@ -156,7 +156,7 @@ namespace SimpleChat
                 }
             }
         }
-
+        // ================= SERVER-BROADCAST ================
         private void BroadcastUserList()
         {
             string list = "USERLIST|" + string.Join(",", clients.Select(x => x.Username)) + "<END>";
@@ -174,7 +174,7 @@ namespace SimpleChat
                     listBox1.Items.Add(c.Username);
             }));
         }
-
+        // ================= SERVER-BUTTON START ================
         private void button_StartService_Click(object sender, EventArgs e)
         {
             StartServer((int)numericUpDown1.Value);
